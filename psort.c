@@ -7,3 +7,7 @@
 #include <sys/sysinfo.h>
 #incldue <sys/stat.h>
 #include <sys/mman.h>
+
+int main(){
+    return 0;
+}
