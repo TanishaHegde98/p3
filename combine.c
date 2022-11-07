@@ -88,14 +88,17 @@ rec_t * read_inp(char * fn, uint size){
   } inp;
   inp.filename = fn;
 
-  if ((inp.fd = open(inp.filename, O_RDONLY)) == -1) {
-    perror("Error opening file");
-    exit(EXIT_FAILURE);
+  if ((inp.fd = open(inp.filename, O_RDONLY)) < 0) {
+    fprintf(stderr,"%s","An error has occurred\n");
+    exit(0);
   }
 
   if ((inp.map = mmap(0, size, PROT_READ, MAP_SHARED, inp.fd, 0)) ==
           MAP_FAILED)
-    exit(EXIT_FAILURE);
+    {
+        fprintf(stderr,"%s","An error has occurred\n");
+        exit(0);
+    }
 
   size = size / 100; // read 100 bytes as a seperate record
   rec_t *rec_t_map =
@@ -115,20 +118,30 @@ return rec_t_map;
 }
 
 void write_op(char * fn, rec_t * rec_t_map, uint size){
-    FILE *fd = fopen(fn, "wb");
-    if(fd == NULL)
-    {
-        printf("Error!");   
-        exit(1);             
-    }
+    // FILE *fd = fopen(fn, "wb");
+    // if(fd == NULL)
+    // {
+    //     printf("Error!");   
+    //     exit(1);             
+    // }
 
     
-    for (uint i = 0; i < size/100; i++){
-        fwrite(rec_t_map[i].value,100,1,fd);
-        //fwrite(&rec_t_map[i], sizeof(rec_t), 1, fd);
-        //fprintf(rec_t_map[i].value,);
+    // for (uint i = 0; i < size/100; i++){
+    //     fwrite(rec_t_map[i].value,100,1,fd);
+    //     //fwrite(&rec_t_map[i], sizeof(rec_t), 1, fd);
+    //     //fprintf(rec_t_map[i].value,);
+    // }
+    // fclose(fd);
+    int fd = open(fn, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+    if (fd < 0) {
+        perror("An error has occured");
+        exit(1);
     }
-    fclose(fd);
+    for (uint i = 0; i < size/100; i++){
+        int rc = write(fd, rec_t_map[i].value, 100);
+    }
+    fsync(fd);
+    close(fd);
 }
 
 double t(void) {
@@ -182,8 +195,8 @@ void partition(rec_t* left0, rec_t* right0, rec_t** l1, rec_t** r1, rec_t** l2, 
     //free((left0+ 1)->value);
     (left0+ 1)->value = piv.value;
     rec_t *left, *right;
-    #define BSZ 256
-    if (right0 - left0 > 2 * BSZ + 3) {
+    #define BSZ 200
+    if (right0 - left0 > 2 * BSZ) {
 
         left = left0 + 2;
         right = right0 - 1;
@@ -233,7 +246,8 @@ void partition(rec_t* left0, rec_t* right0, rec_t** l1, rec_t** r1, rec_t** l2, 
         if (left >= right) break;
         swap(left, right);
     }
-    *(left0 + 1) = *right;
+    (left0 + 1)->key = right->key;
+    (left0 + 1)->value = right->value;
     right->key = piv.key;
     //free(right->value);
     right->value=piv.value;
@@ -311,8 +325,20 @@ void sort(rec_t* data, int len) {
 
 int main(int argc, char **argv) {
     struct stat st;
-    stat(argv[1], &st);
+    if (stat(argv[1], &st) < 0)
+    {
+        // perror("An error has occurred\n");
+        fprintf(stderr,"%s","An error has occurred\n");
+        // printf("Inside error code 1");
+        exit(0);
+        }
     uint size=st.st_size;
+    if(size<=0){
+        // printf("Inside error code");
+        fprintf(stderr,"%s","An error has occurred\n");
+        // printf("An error has occurred\n");
+        exit(0); 
+    }
     rec_t *rec_t_map=read_inp(argv[1],size);
     //printing the input data.
     // for (uint i = 0; i < size/100; i++){
