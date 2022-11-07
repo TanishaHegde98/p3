@@ -22,7 +22,9 @@ uint size;
 void swap(rec_t *a, rec_t *b){
     int key= a->key;
     //temp.key = a->key;
-    char * tVal=strdup(a->value);
+    char * tVal;
+    tVal = (char *)malloc(sizeof(char)*100);
+    memcpy(tVal,a->value,100);
     //free(a->value);
     a->key=b->key;
     a->value=b->value;
@@ -38,7 +40,8 @@ void sort3fast(rec_t *a, rec_t *b, rec_t *c){
             else{
                 rec_t temp;
                 temp.key = a->key;
-                temp.value=strdup(a->value);
+                temp.value=(char *)malloc(sizeof(char)*100);
+                memcpy(temp.value,a->value,100);
                 //free(a->value);
                 a->key=b->key;
                 a->value=b->value;
@@ -55,7 +58,8 @@ void sort3fast(rec_t *a, rec_t *b, rec_t *c){
             if (c < a) { 
                 rec_t temp;
                 temp.key = c->key;
-                temp.value=strdup(c->value);
+                temp.value=(char *)malloc(sizeof(char)*100);
+                memcpy(temp.value,c->value,100);
                 //free(c->value);
                 c->key=b->key;
                 c->value=b->value;
@@ -110,6 +114,23 @@ close(inp.fd);
 return rec_t_map;
 }
 
+void write_op(char * fn, rec_t * rec_t_map, uint size){
+    FILE *fd = fopen(fn, "wb");
+    if(fd == NULL)
+    {
+        printf("Error!");   
+        exit(1);             
+    }
+
+    
+    for (uint i = 0; i < size/100; i++){
+        fwrite(rec_t_map[i].value,100,1,fd);
+        //fwrite(&rec_t_map[i], sizeof(rec_t), 1, fd);
+        //fprintf(rec_t_map[i].value,);
+    }
+    fclose(fd);
+}
+
 double t(void) {
 
     static double t0;
@@ -132,7 +153,8 @@ void insert_sort(rec_t *left, rec_t* right) {
     for (rec_t * pi = left + 2; pi <= right; pi++) {
         rec_t h;
         h.key = pi->key;
-        h.value = strdup(pi->value);
+        h.value=(char *)malloc(sizeof(char)*100);
+        memcpy(h.value,pi->value,100);
         //free(pi->value);
         rec_t* pj = pi - 1;
         while (h.key < pj->key) {
@@ -150,7 +172,8 @@ void partition(rec_t* left0, rec_t* right0, rec_t** l1, rec_t** r1, rec_t** l2, 
     rec_t *mid = left0 + (right0 - left0) / 2; 
     rec_t piv;
     piv.key = mid->key;
-    piv.value=strdup(mid->value);
+    piv.value=(char *)malloc(sizeof(char)*100);
+    memcpy(piv.value,mid->value,100);
     //free(mid->value);
     mid->key = (left0 + 1)->key;
     mid->value = (left0 + 1)->value;
@@ -241,7 +264,7 @@ void* sort_thr(void *arg) {
 void qusort(rec_t* left, rec_t* right) {
 
     int diff = right-left;
-    printf("%d",diff);
+    //printf("%d",diff);
     while (right - left >= 50) {
         rec_t *l, *r;
         partition(left, right, &l, &r, &left, &right);
@@ -268,7 +291,7 @@ void qusort(rec_t* left, rec_t* right) {
 
 void sort(rec_t* data, int len) {
 
-    printf("in sort");
+    //printf("in sort");
     int n_cpus = sysconf(_SC_NPROCESSORS_ONLN);
     if (n_cpus > 0) max_threads = n_cpus * 2;
     else max_threads = 8;
@@ -277,7 +300,7 @@ void sort(rec_t* data, int len) {
     rec_t** param = malloc(2 * sizeof(rec_t*));
     param[0] = data;
     param[1] = data + len/100 - 1;
-    printf("%d",param[1]->key);
+    //printf("%d",param[1]->key);
     n_threads = 1;
     pthread_create(&thread, NULL, sort_thr, param);
 
@@ -292,21 +315,23 @@ int main(int argc, char **argv) {
     uint size=st.st_size;
     rec_t *rec_t_map=read_inp(argv[1],size);
     //printing the input data.
-    for (uint i = 0; i < size/100; i++){
-        printf("\n*Key=%d",rec_t_map[i].key);
-    }
+    // for (uint i = 0; i < size/100; i++){
+    //     printf("\n*Key=%d",rec_t_map[i].key);
+    // }
     
-    printf("Sorting %d million records with Quicksort ...\n",
-        size / 1000000);
+    //printf("Sorting %d million records with Quicksort ...\n",size / 1000000);
     //printf("size %d", size);
     int len= size/100;
     t();
     sort(rec_t_map, size);
-    printf("\nRecords after sorting\n");
-    for (uint i = 0; i < size/100; i++){
-        printf("\n*Key=%d",rec_t_map[i].key);
-    }
-    printf("\n%.2fs\n", t());
+    // printf("\nRecords after sorting\n");
+    // for (uint i = 0; i < size/100; i++){
+    //     printf("\n*Key=%d",rec_t_map[i].key);
+    // }
+    //printf("\n%.2fs\n", t());
+    //Write to file
+    write_op(argv[2],rec_t_map,size);
+    //printf("\n%.2fs\n", t());
     free(rec_t_map);
     exit(0);
 }
