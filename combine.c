@@ -17,62 +17,23 @@ typedef struct {
 } rec_t;
 uint size;
 
-//#define swap(a, b) { int _h = a; a = b; b = _h; }
 #define min(a, b) ((a) < (b) ? (a) : (b))
-void swap(rec_t *a, rec_t *b){
-    int key= a->key;
-    //temp.key = a->key;
-    char * tVal;
-    tVal = (char *)malloc(sizeof(char)*100);
-    memcpy(tVal,a->value,100);
-    //free(a->value);
-    a->key=b->key;
-    a->value=b->value;
-    b->key=key;
-   b->value=tVal;
-}
+#define swap(a, b) { rec_t _h = *a; *a = *b; *b = _h; }
 
-//void swaoWithPiv()
-void sort3fast(rec_t *a, rec_t *b, rec_t *c){
-    if (b->key < a ->key) {
-        if (c->key < a->key) { 
-            if (c->key < b->key) { swap(a, c); }
-            else{
-                rec_t temp;
-                temp.key = a->key;
-                temp.value=(char *)malloc(sizeof(char)*100);
-                memcpy(temp.value,a->value,100);
-                //free(a->value);
-                a->key=b->key;
-                a->value=b->value;
-                b->key=c->key;
-                b->value=c->value;
-                c->key=temp.key;
-                c->value=temp.value;
-            }
-        }
-        else { swap(a, b); } 
-    }
-    else{
-        if (c < b) {
-            if (c < a) { 
-                rec_t temp;
-                temp.key = c->key;
-                temp.value=(char *)malloc(sizeof(char)*100);
-                memcpy(temp.value,c->value,100);
-                //free(c->value);
-                c->key=b->key;
-                c->value=b->value;
-                b->key=a->key;
-                b->value=b->value;
-                //b=a;
-                a->key=temp.key;
-                a->value=temp.value;
-                }
-        }
-        else { swap(b, c); } 
-    }
-}
+#define sort3fast(a, b, c)              \
+    if ((*b).key < a->key) {                        \
+        if (c->key < a->key) {                    \
+            if (c->key < (*b).key) { swap(a, c); }  \
+            else { rec_t h = *a; *a = *b; *b = *c; *c = h;} \
+        }                               \
+        else { swap(a, b); }            \
+    }                                   \
+    else {                              \
+        if (c->key < (*b).key) {                    \
+            if (c->key < a->key) { rec_t h = *c; *c = *b; *b = *a; *a = h;} \
+            else { swap(b, c); }        \
+        }                               \
+    }   \
 int max_threads;
 int n_threads;
 
@@ -108,7 +69,6 @@ rec_t * read_inp(char * fn, uint size){
 // store input in map
   for (char *r = inp.map; r < inp.map + size * 100; r += 100) {
     c->key = *(int *)r;
-    //printf("%d ",c->key);
     c->value = r;
     c++;
   }
@@ -118,20 +78,6 @@ return rec_t_map;
 }
 
 void write_op(char * fn, rec_t * rec_t_map, uint size){
-    // FILE *fd = fopen(fn, "wb");
-    // if(fd == NULL)
-    // {
-    //     printf("Error!");   
-    //     exit(1);             
-    // }
-
-    
-    // for (uint i = 0; i < size/100; i++){
-    //     fwrite(rec_t_map[i].value,100,1,fd);
-    //     //fwrite(&rec_t_map[i], sizeof(rec_t), 1, fd);
-    //     //fprintf(rec_t_map[i].value,);
-    // }
-    // fclose(fd);
     int fd = open(fn, O_CREAT | O_WRONLY | O_TRUNC, 0666);
     if (fd < 0) {
         perror("An error has occured");
@@ -168,7 +114,6 @@ void insert_sort(rec_t *left, rec_t* right) {
         h.key = pi->key;
         h.value=(char *)malloc(sizeof(char)*100);
         memcpy(h.value,pi->value,100);
-        //free(pi->value);
         rec_t* pj = pi - 1;
         while (h.key < pj->key) {
             (pj + 1)->key = pj->key;
@@ -187,15 +132,13 @@ void partition(rec_t* left0, rec_t* right0, rec_t** l1, rec_t** r1, rec_t** l2, 
     piv.key = mid->key;
     piv.value=(char *)malloc(sizeof(char)*100);
     memcpy(piv.value,mid->value,100);
-    //free(mid->value);
     mid->key = (left0 + 1)->key;
     mid->value = (left0 + 1)->value;
     sort3fast(left0, &piv, right0);  // check
     (left0+ 1)->key = piv.key;
-    //free((left0+ 1)->value);
     (left0+ 1)->value = piv.value;
     rec_t *left, *right;
-    #define BSZ 200
+    #define BSZ 64*(sizeof(rec_t))
     if (right0 - left0 > 2 * BSZ) {
 
         left = left0 + 2;
@@ -227,7 +170,7 @@ void partition(rec_t* left0, rec_t* right0, rec_t** l1, rec_t** r1, rec_t** l2, 
             ol -= min;
             or -= min;
             for (int i = 0; i < min; i++) {
-                swap(*(ol + i), *(or + i));
+                swap(*(ol + i),*(or + i));
             }
             if (ol == offl) left += BSZ;
             if (or == offr) right -= BSZ;
@@ -260,6 +203,7 @@ void partition(rec_t* left0, rec_t* right0, rec_t** l1, rec_t** r1, rec_t** l2, 
         *l1 = right + 1; *r1 = right0;
         *l2 = left0; *r2 = right - 1;
     }
+    // free(piv);
 }
 
 void qusort(rec_t* left, rec_t* right);
@@ -278,7 +222,7 @@ void* sort_thr(void *arg) {
 void qusort(rec_t* left, rec_t* right) {
 
     int diff = right-left;
-    //printf("%d",diff);
+    // printf("\n%d",diff);
     while (right - left >= 50) {
         rec_t *l, *r;
         partition(left, right, &l, &r, &left, &right);
@@ -306,6 +250,9 @@ void qusort(rec_t* left, rec_t* right) {
 void sort(rec_t* data, int len) {
 
     //printf("in sort");
+    if(len <=100){
+        return;
+    }
     int n_cpus = sysconf(_SC_NPROCESSORS_ONLN);
     if (n_cpus > 0) max_threads = n_cpus * 2;
     else max_threads = 8;
@@ -348,10 +295,10 @@ int main(int argc, char **argv) {
     //printf("Sorting %d million records with Quicksort ...\n",size / 1000000);
     //printf("size %d", size);
     int len= size/100;
-    t();
+    // t();
     sort(rec_t_map, size);
     // printf("\nRecords after sorting\n");
-    // for (uint i = 0; i < size/100; i++){
+    // for (uint i = 0; i < len; i++){
     //     printf("\n*Key=%d",rec_t_map[i].key);
     // }
     //printf("\n%.2fs\n", t());
