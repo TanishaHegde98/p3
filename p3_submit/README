@@ -1,0 +1,10 @@
+The psort.c code is a parallel quicksort approach using threads,
+where the number of threads equal to the number of CPUs on the system else is set to 8.
+The algorithm first reads the input file using mmap and stroes each record in a structure rec_t.
+This algorithm works sequentially if records are less than 50.
+When the records are more, the partition function of quicksort partitions the array according to 
+the pivot and quicksort is recursively called.
+When the records exceed 100,000 each thread sorts a block size of 64 * sizeof(rec_t) records 
+followed by merging of records.
+For the above algorithm we have referenced the paper: 
+https://arxiv.org/abs/1604.06697 by Edelkamp and A. Weiß
