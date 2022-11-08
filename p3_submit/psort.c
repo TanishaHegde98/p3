@@ -183,7 +183,7 @@ void partition(rec_t* left0, rec_t* right0, rec_t** l1, rec_t** r1, rec_t** l2, 
     (left0 + 1)->key = right->key;
     (left0 + 1)->value = right->value;
     right->key = piv.key;
-    //free(right->value);
+    free(right->value);
     right->value=piv.value;
 
     if (right < mid) {
@@ -194,7 +194,6 @@ void partition(rec_t* left0, rec_t* right0, rec_t** l1, rec_t** r1, rec_t** l2, 
         *l1 = right + 1; *r1 = right0;
         *l2 = left0; *r2 = right - 1;
     }
-    // free(piv);
 }
 
 void myQsort(rec_t* left, rec_t* right);
@@ -256,7 +255,6 @@ void sort(rec_t* data, int len) {
 }
 
 int main(int argc, char **argv) {
-    printf("hi");
     struct stat st;
     if (stat(argv[1], &st) < 0)
     {
