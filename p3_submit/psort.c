@@ -183,7 +183,6 @@ void partition(rec_t* left0, rec_t* right0, rec_t** l1, rec_t** r1, rec_t** l2, 
     (left0 + 1)->key = right->key;
     (left0 + 1)->value = right->value;
     right->key = piv.key;
-    free(right->value);
     right->value=piv.value;
 
     if (right < mid) {
